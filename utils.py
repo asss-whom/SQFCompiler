@@ -147,7 +147,7 @@ def _(node: ast.AugAssign) -> str:
     # `lhs.ctx` must be `Store()` because it must have `rhs`.
     lhs = node.target
     if not isinstance(lhs, ast.Name):
-        raise RuntimeError(f"❌ Unknown error happened in parsing {node}!")
+        raise RuntimeError(f"Unknown error happened in parsing {node}!")
     return f"_{lhs.id} = _{lhs.id} {translate(node.op)} {translate(node.value)};"
 
 
@@ -166,7 +166,7 @@ def _(node: ast.For) -> str:
     ):
         forrange = Template('for "$val" from $start to $stop step $step do{$body};')
         if not all(isinstance(arg, ast.Constant) for arg in node.iter.args):
-            raise RuntimeError(f"❌ Unknown error happened in parsing {node}!")
+            raise RuntimeError(f"Unknown error happened in parsing {node}!")
 
         if not isinstance(node.target, ast.Name):
             log.warning(
