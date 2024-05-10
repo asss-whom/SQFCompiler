@@ -35,8 +35,6 @@ basicConfig(
 )
 log = getLogger("rich")
 
-SPECIAL_FUNCTION: list[str] = []
-
 
 def indenter(source: str) -> str:
     indent = " " * 4
@@ -197,7 +195,7 @@ def _(node: ast.For) -> str:
     if not isinstance(node.target, ast.Name):
         log.warning("Unsuppoted target: no-name target is not supported!")
         return ""
-    
+
     var = node.target.id
     target = f"private _{var} = _x" if var != "x" else ""
     body = "".join(translate(child) for child in node.body)
@@ -372,10 +370,6 @@ def _(node: ast.Call) -> str:
         return ""
 
     if isinstance(node.func, ast.Name):
-        if node.func.id in SPECIAL_FUNCTION:
-            # TODO: Add special function.
-            return ""
-
         if len(node.args) == 1:
             return f"{translate(node.args[0])} call {node.func.id}"
         args = ", ".join(translate(arg) for arg in node.args)
