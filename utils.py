@@ -495,4 +495,4 @@ def _(node: ast.Return) -> str:
 
 @translate.register
 def _(node: ast.Await) -> str:
-    return f"waitUntil {{{translate(node.value)}}};"
+    return f"waitUntil {{{translate(node.value)}}}"
