@@ -18,4 +18,4 @@ drop_bomb = {
         [_bomber, _weapon] call BIS_fnc_fire;
     };
 };
-[this, target, "BombCluster_02_F"] call drop_bomb;
+[this, target, "BombCluster_02_F"] spawn drop_bomb; // You should change "call" to "spawn" by yourself.
