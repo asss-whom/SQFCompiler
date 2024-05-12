@@ -1,15 +1,15 @@
-def gcd(x: int, y: int) -> int:
-    if x > y:
-        temp = x
-        x = y
-        y = temp
+def can_bomb(bomber, target):
+    height = GLOBAL.getPosATL(bomber)[2]
+    distance = bomber.distance2D(target)
+    speed = GLOBAL.speed(bomber) * 1000 / (60 * 60)
 
-    while y != 0:
-        temp = x
-        x = y
-        y = temp % y
+    time = (2 * height / 9.8) ** 0.5
+    return distance <= speed * time
 
-    return x
 
-for curator in GLOBAL.allCurators:
-    curator.addCuratorEditableObjects(GLOBAL.allMissionObjects("ALL"), True)
+async def drop_bomb(bomber, target, weapon):
+    await can_bomb(bomber, target)
+
+    while bomber.ammo(weapon) != 0:
+        BIS_fnc_fire(bomber, weapon)
+        GLOBAL.sleep(0.1)
