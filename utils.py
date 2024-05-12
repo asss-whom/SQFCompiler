@@ -136,18 +136,6 @@ def _(node: ast.List | ast.Tuple) -> str:
 
 
 @translate.register
-def _(node: ast.Dict) -> str:
-    if any(key is None for key in node.keys):
-        log.warning("Unsupported dict: unpacking operator is not supported!")
-        return ""
-
-    array = ", ".join(
-        f"[{translate(k), translate(v)}]" for k, v in zip(node.keys, node.values)
-    )
-    return f"createHashMapFromArray [{array}]"
-
-
-@translate.register
 def _(node: ast.Name) -> str:
     return f"_{node.id}"
 
@@ -169,7 +157,10 @@ def _(node: ast.Not) -> str:
 
 @translate.register
 def _(node: ast.BinOp) -> str:
-    return f"{translate(node.left)} {translate(node.op)} {translate(node.right)}"
+    # Ugly but correct.
+    left = f"({translate(node.left)})" if isinstance(node.left, ast.BinOp) else translate(node.left)
+    right = f"({translate(node.right)})" if isinstance(node.right, ast.BinOp) else translate(node.right)
+    return f"{left} {translate(node.op)} {right}"
 
 
 @translate.register
@@ -305,15 +296,8 @@ def _(node: ast.Attribute) -> str:
 
 @translate.register
 def _(node: ast.Subscript) -> str:
-    log.warning(
-        "For subscript, you should manually choose the right sentence.\n"
-        "For list/tuple, it's select. For dict, it's get.\n"
-        "If you want to assign, please use set instead."
-    )
     if isinstance(node.slice, ast.Constant):
-        if isinstance(node.slice.value, int):
-            return f"{translate(node.value)} [select|get] {node.slice.value}"
-        return f"{translate(node.value)} get {node.slice.value}"
+        return f"{translate(node.value)} select {node.slice.value}"
 
     if isinstance(node.slice, ast.Slice):
         if node.slice.step is not None:
@@ -329,7 +313,7 @@ def _(node: ast.Subscript) -> str:
         assert isinstance(node.slice.lower, ast.Constant) and isinstance(
             node.slice.upper, ast.Constant
         )
-        return f"{translate(node.value)} get [{node.slice.lower.value}, {node.slice.upper.value - node.slice.lower.value}]"
+        return f"{translate(node.value)} select [{node.slice.lower.value}, {node.slice.upper.value - node.slice.lower.value}]"
 
     log.warning("Unsupported subscript: multiple slice is not supported!")
     return ""
@@ -347,14 +331,18 @@ def _(node: ast.Assign | ast.AnnAssign) -> str:
     syntax = []
     # The type of `node.targets` is `list`.
     for lhs in node.targets:  # type: ignore
-        if not isinstance(lhs, ast.Name):
-            log.warning(
-                f"Unsupported assign: assign with a non-name target is not supported!"
-            )
+        if isinstance(lhs, ast.Name):
+            # `lhs.ctx` must be `Store()` because it has `rhs`.
+            syntax.append(f"_{lhs.id} = {translate(rhs)};")
+        elif isinstance(lhs, ast.Subscript):
+            if not isinstance(lhs.slice, ast.Constant):
+                log.warning(f"Unsupported assign: {lhs} is not supported!")
+                return ""
+            index = lhs.slice.value
+            syntax.append(f"{translate(node.value)} set [{index}, {translate(rhs)}]")
+        else:
+            log.warning(f"Unsupported assign: {lhs} is not supported!")
             return ""
-
-        # `lhs.ctx` must be `Store()` because it has `rhs`.
-        syntax.append(f"_{lhs.id} = {translate(rhs)};")
     return "".join(syntax)
 
 
