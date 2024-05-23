@@ -21,11 +21,11 @@
 # SOFTWARE.
 
 import ast
-
 from functools import singledispatch
 from logging import basicConfig, getLogger
-from rich.logging import RichHandler
 from string import Template
+
+from rich.logging import RichHandler
 
 basicConfig(
     level="NOTSET",
@@ -39,7 +39,7 @@ log = getLogger("rich")
 def indenter(source: str) -> str:
     indent = " " * 4
     depth = 0
-    lines = []
+    lines: list[str] = []
 
     for line in (
         source.replace("{", "{\n")
@@ -115,8 +115,8 @@ def _(node: ast.JoinedStr) -> str:
         return "".join(value.value for value in node.values)  # type: ignore
 
     index = 1
-    formatted_value = []
-    syntax = []
+    formatted_value: list[str] = []
+    syntax: list[str] = []
     for value in node.values:
         if isinstance(value, ast.Constant):
             # The type of `value.value` is `str`
@@ -158,8 +158,16 @@ def _(node: ast.Not) -> str:
 @translate.register
 def _(node: ast.BinOp) -> str:
     # Ugly but correct.
-    left = f"({translate(node.left)})" if isinstance(node.left, ast.BinOp) else translate(node.left)
-    right = f"({translate(node.right)})" if isinstance(node.right, ast.BinOp) else translate(node.right)
+    left = (
+        f"({translate(node.left)})"
+        if isinstance(node.left, ast.BinOp)
+        else translate(node.left)
+    )
+    right = (
+        f"({translate(node.right)})"
+        if isinstance(node.right, ast.BinOp)
+        else translate(node.right)
+    )
     return f"{left} {translate(node.op)} {right}"
 
 
@@ -328,7 +336,7 @@ def _(node: ast.Assign | ast.AnnAssign) -> str:
         )
         return ""
 
-    syntax = []
+    syntax: list[str] = []
     # The type of `node.targets` is `list`.
     for lhs in node.targets:  # type: ignore
         if isinstance(lhs, ast.Name):
@@ -356,7 +364,7 @@ def _(node: ast.AugAssign) -> str:
 
 @translate.register
 def _(node: ast.Delete) -> str:
-    syntax = []
+    syntax: list[str] = []
     for target in node.targets:
         if not isinstance(target, ast.Name):
             log.warning(
@@ -419,6 +427,8 @@ def _(node: ast.For) -> str:
                 start, stop = (arg.value for arg in args)
             case 3:
                 start, stop, step = (arg.value for arg in args)
+            case _:
+                log.error("Unknown arguments!")
         body = "".join(translate(child) for child in node.body)
         return forrange.substitute(
             val=val, start=start, stop=stop, step=step, body=body
