@@ -20,12 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import sys
-from logging import getLogger
 
 import compiler
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
@@ -52,6 +52,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     try:
         main()
     except Exception as e:
