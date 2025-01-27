@@ -21,35 +21,38 @@
 # SOFTWARE.
 
 import sys
+from logging import getLogger
 
-from utils import to_sqf, log
+import compiler
+
+logger = getLogger(__name__)
 
 
 def main() -> None:
     if sys.version_info.minor != 11 or sys.version_info.major != 3:
-        log.warning(
+        logger.warning(
             "This program has only been tested on Python version 3.11. "
             "Running it on other versions is at your own risk."
         )
 
     if len(sys.argv) < 3:
-        log.info("Usage: main.py fileIn.py fileOut.sqf")
+        logger.info("Usage: main.py fileIn.py fileOut.sqf")
         return None
 
     fileIn = sys.argv[1]
     fileOut = sys.argv[2]
 
-    log.info(f"{fileIn} -> {fileOut}")
+    logger.info(f"{fileIn} -> {fileOut}")
     with open(fileIn) as f:
         source = f.read()
-    result = to_sqf(source)
+    result = compiler.to_sqf(source)
     with open(fileOut, "w") as f:
         f.write(result)
-    log.info("Success!")
+    logger.info("Success!")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
