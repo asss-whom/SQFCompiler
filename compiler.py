@@ -95,7 +95,7 @@ def _(node: ast.Constant) -> str:
 @translate.register
 def _(node: ast.FormattedValue) -> str:
     if node.conversion != -1 or node.format_spec is not None:
-        logger.warning(f"Unsupported format string: value format is not supported!")
+        logger.warning("Unsupported format string: value format is not supported!")
         return ""
     return translate(node.value)
 
@@ -118,7 +118,7 @@ def _(node: ast.JoinedStr) -> str:
             formatted_value.append(translate(value))
             syntax.append(f"%{index}")
             index += 1
-    return f"format [\"{''.join(syntax)}\", {', '.join(formatted_value)}]"
+    return f'format ["{"".join(syntax)}", {", ".join(formatted_value)}]'
 
 
 @translate.register
@@ -362,7 +362,7 @@ def _(node: ast.Delete) -> str:
     for target in node.targets:
         if not isinstance(target, ast.Name):
             logger.warning(
-                f"Unsupported delete: Deleting a non-name target is not supported!"
+                "Unsupported delete: Deleting a non-name target is not supported!"
             )
             return ""
 
@@ -401,7 +401,7 @@ def _(node: ast.For) -> str:
         and isinstance(node.iter.func, ast.Name)
         and node.iter.func.id == "range"
     ):
-        forrange = Template('for "$val" from $start to $stop step $step do{$body};')
+        forrange = Template('for "$val" from $start to $stop step $step do {$body};')
         assert all(isinstance(arg, ast.Constant) for arg in node.iter.args)
         if not isinstance(node.target, ast.Name):
             logger.warning(
