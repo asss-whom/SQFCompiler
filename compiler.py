@@ -298,8 +298,8 @@ def _(node: ast.Attribute) -> str:
 
 @translate.register
 def _(node: ast.Subscript) -> str:
-    if isinstance(node.slice, ast.Constant):
-        return f"{translate(node.value)} select {node.slice.value}"
+    if isinstance(node.slice, (ast.Constant, ast.Name)):
+        return f"{translate(node.value)} select {translate(node.slice)}"
 
     if isinstance(node.slice, ast.Slice):
         if node.slice.step is not None:
@@ -317,7 +317,7 @@ def _(node: ast.Subscript) -> str:
         )
         return f"{translate(node.value)} select [{node.slice.lower.value}, {node.slice.upper.value - node.slice.lower.value}]"
 
-    logger.warning("Unsupported subscript: multiple slice is not supported!")
+    logger.warning(f"Unsupported subscript: {node.slice} is not supported!")
     return ""
 
 

@@ -29,12 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    if sys.version_info.minor != 11 or sys.version_info.major != 3:
-        logger.warning(
-            "This program has only been tested on Python version 3.11. "
-            "Running it on other versions is at your own risk."
-        )
-
     if len(sys.argv) < 3:
         logger.info("Usage: main.py fileIn.py fileOut.sqf")
         return None
