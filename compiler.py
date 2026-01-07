@@ -61,7 +61,7 @@ def to_sqf(source: str) -> str:
 
 @singledispatch
 def translate(node: ast.AST) -> str:
-    logger.warning(f"Unsupported node: {node:r}!")
+    logger.warning(f"Unsupported node: {node}!")
     return ""
 
 
@@ -112,7 +112,7 @@ def _(node: ast.JoinedStr) -> str:
     for value in node.values:
         if isinstance(value, ast.Constant):
             # The type of `value.value` is `str`
-            syntax.append(value.value)
+            syntax.append(value.value)  # type: ignore
         else:
             # The type of `value` is `ast.FormattedValue`
             formatted_value.append(translate(value))
@@ -143,8 +143,23 @@ def _(node: ast.UnaryOp) -> str:
 
 
 @translate.register
+def _(node: ast.UAdd) -> str:
+    return "+"
+
+
+@translate.register
+def _(node: ast.USub) -> str:
+    return "-"
+
+
+@translate.register
 def _(node: ast.Not) -> str:
     return "!"
+
+
+@translate.register
+def _(node: ast.Invert) -> str:
+    return "bitnot"
 
 
 @translate.register
@@ -312,8 +327,11 @@ def _(node: ast.Subscript) -> str:
             )
             return ""
 
-        assert isinstance(node.slice.lower, ast.Constant) and isinstance(
-            node.slice.upper, ast.Constant
+        assert (
+            isinstance(node.slice.lower, ast.Constant)
+            and isinstance(node.slice.upper, ast.Constant)
+            and isinstance(node.slice.lower.value, int)
+            and isinstance(node.slice.upper.value, int)
         )
         return f"{translate(node.value)} select [{node.slice.lower.value}, {node.slice.upper.value - node.slice.lower.value}]"
 
@@ -322,17 +340,10 @@ def _(node: ast.Subscript) -> str:
 
 
 @translate.register
-def _(node: ast.Assign | ast.AnnAssign) -> str:
+def _(node: ast.Assign) -> str:
     rhs = node.value
-    if rhs is None:
-        logger.warning(
-            "Unsupport assign: assign without right hand side is not supported!"
-        )
-        return ""
-
     syntax: list[str] = []
-    # The type of `node.targets` is `list`.
-    for lhs in node.targets:  # type: ignore
+    for lhs in node.targets:
         if isinstance(lhs, ast.Name):
             # `lhs.ctx` must be `Store()` because it has `rhs`.
             syntax.append(f"_{lhs.id} = {translate(rhs)};")
@@ -346,6 +357,14 @@ def _(node: ast.Assign | ast.AnnAssign) -> str:
             logger.warning(f"Unsupported assign: {lhs} is not supported!")
             return ""
     return "".join(syntax)
+
+
+@translate.register
+def _(node: ast.AnnAssign) -> str:
+    if node.value is not None:
+        return f"{translate(node.target)} = {translate(node.value)};"
+    # SQF is not support annotation
+    return ""
 
 
 @translate.register
